@@ -111,7 +111,7 @@ BealsThres <- function(Beals, limit = NULL, const = 0.01, r, x){
   ## thresholds for each specis
   q <- numeric(ncol(r))
   t <- Beals$t
-  b <- Beals$rawBealsPool
+  b <- Beals$Pool
   for (j in 1:ncol(r)){
     q[j] <- 1
     if (limit == "min" & sum(r[, j]) > 0){

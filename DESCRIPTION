@@ -1,10 +1,10 @@
 Package: DarkDiv
 Type: Package
-Title: Estimating Probabilistic Dark Diversity
-Version: 0.1.0
+Title: Estimating Dark Diversity and Site-Specific Species Pools
+Version: 0.2.0
 Author: Carlos P. Carmona
 Maintainer: Carlos P. Carmona <perezcarmonacarlos@gmail.com>
-Description: Estimation of dark diversity using species co-occurrences. 
+Description: Estimation of dark diversity and site-specific species pools using species co-occurrences. 
     It includes implementations of probabilistic dark diversity based on the 
     Hypergeometric distribution, as well as estimations based on the Beals index,
     which can be transformed to binary predictions using different thresholds, 
@@ -22,6 +22,6 @@ RoxygenNote: 6.1.1
 Imports: vegan, stats
 Suggests: testthat
 NeedsCompilation: no
-Packaged: 2019-04-27 15:27:17 UTC; carlosperezcarmona
+Packaged: 2020-02-12 14:52:29 UTC; c.p.carmona
 Repository: CRAN
-Date/Publication: 2019-04-27 16:10:03 UTC
+Date/Publication: 2020-02-12 15:20:05 UTC

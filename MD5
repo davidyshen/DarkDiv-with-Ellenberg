@@ -1,6 +1,6 @@
-a15b58fdd7f7dc1782cf3b8576fd06e6 *DESCRIPTION
+08c858ef5eef2949d6cdf60d11802305 *DESCRIPTION
 817d6a403e94463dd4df5afba9ebc71b *NAMESPACE
 045ed726fdced75a5c89be1dba9cfefe *R/DarkDiv.R
-d1e63cd5cf99f1fbef10a6342fbd53c0 *R/utility_functions.R
+d4bbed99767212586a534d0e94d708b2 *R/utility_functions.R
 74f12839f852716c0b3b28c10148c4d8 *man/DarkDiv.Rd
-70f2dc536da264419a13c1c3e28f2926 *tests/testthat.R
+446ee71fe36d37609acaf68961eced81 *tests/testthat/testthat.R
