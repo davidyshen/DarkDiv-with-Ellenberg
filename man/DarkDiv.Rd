@@ -5,7 +5,7 @@
 \title{Dark Diversity}
 \usage{
 DarkDiv(x, r = x, method = "Hypergeometric", limit = "min",
-  const = 0.01, removeAbsent = T, wa = F)
+  const = 0.01, removeAbsent = T, wa = F, weights = NULL)
 }
 \arguments{
 \item{x}{Study data with sites in rows and species in columns. Make sure that names of species are written in colnames(x) and that they coincide with the names given in 'r' (in case it is provided).}
@@ -20,7 +20,9 @@ DarkDiv(x, r = x, method = "Hypergeometric", limit = "min",
 
 \item{removeAbsent}{Logical indicating what to do with species with zero occurrences in the indication matrix (i.e. for which no indication values can be estimated). removeAbsent = TRUE indicates that these species should be removed from results (giving dark diversity and pool matrices whose dimensions might not coincide with x). removeAbsent = FALSE indicates that these columns will be kept in the results, but filled with NAs. Default to TRUE.}
 
-\item{wa}{Logical indicating whether abundance should be considered for estimations of dark diversity. Currently methods are only developed for wa=F, and setting wa=T will result in ending the function with an error. Defaults to FALSE}
+\item{wa}{Logical indicating whether abundance should be considered for estimations of dark diversity. Defaults to FALSE. If wa = T, abundance weighted values are given based on the values in 'weights', or in 'x' in case 'weights' is not provided.}
+
+\item{weights}{Matrix or data.frame with sites in rows and species in columns including the weights that will be used in case wa is set to TRUE.}
 }
 \value{
 \code{DarkDiv} returns a list containing the following components:

@@ -1,8 +1,8 @@
 Package: DarkDiv
 Type: Package
 Title: Estimating Dark Diversity and Site-Specific Species Pools
-Version: 0.2.0
-Author: Carlos P. Carmona
+Version: 0.3.0
+Author: Carlos P. Carmona and Meelis Partel
 Maintainer: Carlos P. Carmona <perezcarmonacarlos@gmail.com>
 Description: Estimation of dark diversity and site-specific species pools using species co-occurrences. 
     It includes implementations of probabilistic dark diversity based on the 
@@ -22,6 +22,6 @@ RoxygenNote: 6.1.1
 Imports: vegan, stats
 Suggests: testthat
 NeedsCompilation: no
-Packaged: 2020-02-12 14:52:29 UTC; c.p.carmona
+Packaged: 2020-07-15 08:16:03 UTC; Carlos
 Repository: CRAN
-Date/Publication: 2020-02-12 15:20:05 UTC
+Date/Publication: 2020-07-15 09:00:02 UTC

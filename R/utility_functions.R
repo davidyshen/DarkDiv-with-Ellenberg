@@ -1,3 +1,6 @@
+
+####PREPARATION OF DATA ####
+
 # Checking the data used in the different functions of DarkDiv
 #
 # \code{dataPrep} Checks the validity of the data provided for dark diversity estimations. It basically checks that the names of species are similar in the reference (if provided) and testing datasets.
@@ -40,6 +43,9 @@ dataPrep <- function(x, r = x, removeAbsent, wa = F){
   return(list(x = x, r = r, xOrig = xOrig, rOrig = rOrig))
 }
 
+####PREPARATION OF COOCCURRENCE MATRIX ####
+
+
 # \code{coocPrep} Makes the co-occurrence matrix needed for all the dark diversity methods used here
 #
 #
@@ -51,6 +57,8 @@ coocPrep <- function(r){
   M <- crossprod(r, r)
   return(M)
 }
+
+####BEALS ####
 
 
 # \code{Beals} Estimates the Beals index (Beals smoothing) of dark diversity. The Beals index gives the probability that a species \emph{i} occurs in a site, based on the identity of the other species that are locally present, and their patterns of co-occurrence. For each pair of species i and j, the conditional probability that i occurs given that j is present is estimated and stored in the so called "indication matrix". Afterwards, these conditional probabilities are averaged for each site considering the species that were locally present, so that the result is a matrix containing the averaged probability for all species in all sites. The estimation of the Beals index presented here is based on the \code{beals} function of the package \code{vegan}.
@@ -92,6 +100,8 @@ Beals <- function(M, x, r){
   return(results)
 }
 
+####BEALS THRESHOLD ####
+
 # \code{BealsThres} Applies thresholds to raw beals values to transform the probabilities for each species in each site into binary presence/absence indication.
 #
 #
@@ -111,7 +121,7 @@ BealsThres <- function(Beals, limit = NULL, const = 0.01, r, x){
   ## thresholds for each specis
   q <- numeric(ncol(r))
   t <- Beals$t
-  b <- Beals$Pool
+  b <- Beals$AllProbs
   for (j in 1:ncol(r)){
     q[j] <- 1
     if (limit == "min" & sum(r[, j]) > 0){
@@ -138,18 +148,18 @@ BealsThres <- function(Beals, limit = NULL, const = 0.01, r, x){
   for (i in 1:nrow(x)){
     DD[i, b[i, ] >= q & x[i, ] == 0] <- 1
   }
-  return(list(indication = Beals$indication, AllProbs = DD,  Pool = DD + x,
+  return(list(indication = Beals$indication, AllProbs = DD + x,  Pool = DD + x,
               Dark = replace(DD, x > 0, NA)))
 }
 
 
 
-####FAVORABILITY
+####FAVORABILITY ####
 Favorability <- function(Beals, x){
   ##P is Beals raw index for each site & species
   ##n0 is the number of absences of that species
   ##n1 is the number of presences
-  P <- Beals$Pool
+  P <- Beals$AllProbs
   n1 <- matrix(rep(colSums(x > 0), nrow(x)), nrow=nrow(x), byrow=T)
   n0 <- nrow(x) - n1
   DD <- (P / (1 - P))/((n1 / n0) + (P / (1 - P)))
@@ -157,8 +167,10 @@ Favorability <- function(Beals, x){
               Dark = replace(DD, x > 0, NA)))
 }
 
+####HYPERGEOMETRIC ####
 
-# \code{Hypergeometric} Estimates dark diversity probability based on teh hypergeometric distribution.
+
+# \code{Hypergeometric} Estimates dark diversity probability based on the hypergeometric distribution.
 #
 #
 # @param M Matrix containing the number co-occurrences between pairs of species.
@@ -185,14 +197,50 @@ Hypergeometric <- function(M, x, r){
   rownames(M) <- paste("T",rownames(M),sep=".")
   ###Dark diversity matrix: Probability of absent species being in the local pool
   #Transform the indication values into probabilities:
-  M <- stats::pnorm(M, mean=0, sd=1)
   # Average probabilities:
   b <- (x %*% M / rowSums(x))
   dimnames(b) <- dimnames(x)
+  b <- stats::pnorm(b, mean = 0, sd = 1)
   results <- list(indication = M, AllProbs = b, Pool = replace(b, x>0, 1),
                   Dark = replace(b, x > 0, NA))
   return(results)
 }
+
+
+####ABUNDANCE WEIGHTING####
+
+# \code{DDWeighting} Estimates dark diversity probability by estimating the weighted averaged values of the
+# indication matrix. Weights are proportional to the relative contribution of species (either by using abundances from the original x matrix or by using a matrix of weights provided by the user)
+#
+#
+# @param M Matrix containing the number co-occurrences between pairs of species.
+# @param r Dataset for reference, with sites in rows and species in columns.
+# @param x Study data with sites in rows and species in columns.
+
+DDWeighting <- function(x, ind, weights = NULL, method = "Hypergeometric"){
+  if (is.null(weights)) {# if weights not given, abundance of present species are used as weights
+    weights <- x
+  }
+  weights <- as.matrix(weights)
+  weights <- weights / rowSums(weights) ### RELATIVE WEIGTHS
+  out <- x
+  out[,] <- 0
+  out <- weights %*% ind
+  dimnames(out) <- dimnames(x)
+  if(method == "Hypergeometric"){
+    out <- stats::pnorm(out, mean = 0, sd = 1)
+  }
+  res <- list(indication = ind, AllProbs = out, Pool = replace(out, x>0, 1),
+                Dark = replace(out, x > 0, NA))
+  if(method == "Favorability"){
+    res <- Favorability(Beals = res , x = x)
+  }
+  return(res)
+}
+
+
+
+
 
 
 

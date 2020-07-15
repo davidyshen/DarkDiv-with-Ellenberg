@@ -40,7 +40,8 @@
 #' @param limit A character to choose between "quantile", "min", "const" and "outlier" indicating the method to choose which limit to apply to the thresholded Beals method (see "Details" below). Defaults to "min".
 #' @param const constant for limit (as quantile or as minimal) in the ThresholdBeals method. Defaults to 0.01.
 #' @param removeAbsent Logical indicating what to do with species with zero occurrences in the indication matrix (i.e. for which no indication values can be estimated). removeAbsent = TRUE indicates that these species should be removed from results (giving dark diversity and pool matrices whose dimensions might not coincide with x). removeAbsent = FALSE indicates that these columns will be kept in the results, but filled with NAs. Default to TRUE.
-#' @param wa Logical indicating whether abundance should be considered for estimations of dark diversity. Currently methods are only developed for wa=F, and setting wa=T will result in ending the function with an error. Defaults to FALSE
+#' @param wa Logical indicating whether abundance should be considered for estimations of dark diversity. Defaults to FALSE. If wa = T, abundance weighted values are given based on the values in 'weights', or in 'x' in case 'weights' is not provided.
+#' @param weights Matrix or data.frame with sites in rows and species in columns including the weights that will be used in case wa is set to TRUE. 
 
 #' @return \code{DarkDiv} returns a list containing the following components:
 #'
@@ -76,20 +77,29 @@ DarkDiv <- function(x,
                     limit = "min",
                     const = 0.01,
                     removeAbsent = T,
-                    wa = F){
+                    wa = F,
+                    weights=NULL){
   #In case r is given, check if it is already an indication matrix
   if (!method %in% c("Hypergeometric", "RawBeals", "ThresholdBeals",
                      "Favorability")){
     stop("Please, select a value for 'method' between 'Hypergeometric',
          'RawBeals', 'ThresholdBeals' or 'Favorability'")
+    if(!is.null(weights) & wa == T){
+      if(!identical(dimnames(x), dimnames(weights))){
+        stop("Please make sure that 'x' and 'weights' have same names in rows and columns.")
+      }
+    }
   }
   if(method =="ThresholdBeals"){
     if (!limit %in% c("quantile", "min", "const", "outlier")){
       stop("Please, select a value for 'limit' between 'quantile', 'min', 'const', and 'outlier'")
     }
+    if(wa == T){
+      stop("Weighted abundances are not yet implemented for the ThresholdBeals method.")
+    }
   }
-  x <- as.matrix(x)
-  r <- as.matrix(r)
+  x <- xOrig <- as.matrix(x)
+  r <- rOrig <-as.matrix(r)
   rIsInd <- FALSE
   if(!is.null(r)){
     if (identical(rownames(r), colnames(r)) |
@@ -98,13 +108,9 @@ DarkDiv <- function(x,
       rIsInd <- TRUE
     }
   }
-  if(!rIsInd){
-    if (wa == T){
-      stop("Abundance-weighted indices are not yet implemented")
-    } else{
-      r <- replace(r, r > 0, 1)
-      x <- replace(x, x > 0, 1)
-    }
+  if(!rIsInd){ # IF r is not indication, estimate indication matrix from x
+    r <- replace(r, r > 0, 1)
+    x <- replace(x, x > 0, 1)
     prepData <- dataPrep(x = x, r = r, removeAbsent = removeAbsent)
     coOcc <- coocPrep(prepData$r)
     if(method == "Hypergeometric"){
@@ -125,12 +131,8 @@ DarkDiv <- function(x,
         res <- Favorability(Beals = res, x = prepData$x)
       }
     }
-  }else{
-    if (wa == T){
-      stop("Abundance-weighted indices are not yet implemented")
-    } else{
-      x <- replace(x, x > 0, 1)
-    }
+  }else{ # if r was indicator matrix
+    x <- replace(x, x > 0, 1)
     M <- r
     colnamesM1 <- colnames(M)
     nsp1 <- sum(colnames(x) %in%colnamesM1)
@@ -185,10 +187,18 @@ DarkDiv <- function(x,
       }
     }
   }
+
+  ##### APPLYING WEIGHTS
+  if(wa == T){
+    res <- DDWeighting(x = xOrig, ind = res$indication, weights = weights, 
+                       method = method) 
+  }
+
+  ### REMOVING SPECIES ABSENT FROM DATASET
   if(removeAbsent == FALSE){ #Fill absent species with NA
     indicNew <- matrix(NA, nrow=ncol(prepData$xOrig), ncol=ncol(prepData$xOrig),
-                       dimnames = list(paste("T", colnames(prepData$xOrig),sep = "."),
-                                       paste("I", colnames(prepData$xOrig),sep = ".")))
+                     dimnames = list(paste("T", colnames(prepData$xOrig),sep = "."),
+                                     paste("I", colnames(prepData$xOrig),sep = ".")))
     indicNew[rownames(res$indication), colnames(res$indication)] <- res$indication
     AllProbsNew <- PoolNew <- DarkNew<- matrix(NA, nrow=nrow(prepData$xOrig),
                                                ncol=ncol(prepData$xOrig),
@@ -201,3 +211,10 @@ DarkDiv <- function(x,
   }
   return(res)
 }
+
+
+
+
+
+
+
