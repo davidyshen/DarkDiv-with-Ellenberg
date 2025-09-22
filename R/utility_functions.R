@@ -232,7 +232,7 @@ Hypergeometric <- function(M, x, r, niche_weighting = NULL) {
     similarity <- exp(-distance)
     diag(similarity) <- 1
     # Weight indication values by similarity
-    M <- similarity %*% M
+    M <- M * similarity
   }
 
   ###Dark diversity matrix: Probability of absent species being in the local pool
