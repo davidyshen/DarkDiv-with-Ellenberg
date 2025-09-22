@@ -41,7 +41,8 @@
 #' @param const constant for limit (as quantile or as minimal) in the ThresholdBeals method. Defaults to 0.01.
 #' @param removeAbsent Logical indicating what to do with species with zero occurrences in the indication matrix (i.e. for which no indication values can be estimated). removeAbsent = TRUE indicates that these species should be removed from results (giving dark diversity and pool matrices whose dimensions might not coincide with x). removeAbsent = FALSE indicates that these columns will be kept in the results, but filled with NAs. Default to TRUE.
 #' @param wa Logical indicating whether abundance should be considered for estimations of dark diversity. Defaults to FALSE. If wa = T, abundance weighted values are given based on the values in 'weights', or in 'x' in case 'weights' is not provided.
-#' @param weights Matrix or data.frame with sites in rows and species in columns including the weights that will be used in case wa is set to TRUE. 
+#' @param weights Matrix or data.frame with sites in rows and species in columns including the weights that will be used in case wa is set to TRUE.
+#' @param niche_weighting Optional niche value table for niche-based weighting in Hypergeometric method. Should be a data.frame or matrix with species names in the first column and niche values in subsequent columns.
 
 #' @return \code{DarkDiv} returns a list containing the following components:
 #'
@@ -71,102 +72,145 @@
 #' @import vegan
 #'
 #' @export
-DarkDiv <- function(x,
-                    r = x,
-                    method = "Hypergeometric",
-                    limit = "min",
-                    const = 0.01,
-                    removeAbsent = T,
-                    wa = F,
-                    weights=NULL){
+DarkDiv <- function(
+  x,
+  r = x,
+  method = "Hypergeometric",
+  limit = "min",
+  const = 0.01,
+  removeAbsent = T,
+  wa = F,
+  weights = NULL,
+  niche_weighting = NULL
+) {
   #In case r is given, check if it is already an indication matrix
-  if (!method %in% c("Hypergeometric", "RawBeals", "ThresholdBeals",
-                     "Favorability")){
-    stop("Please, select a value for 'method' between 'Hypergeometric',
-         'RawBeals', 'ThresholdBeals' or 'Favorability'")
-    if(!is.null(weights) & wa == T){
-      if(!identical(dimnames(x), dimnames(weights))){
-        stop("Please make sure that 'x' and 'weights' have same names in rows and columns.")
+  if (
+    !method %in%
+      c("Hypergeometric", "RawBeals", "ThresholdBeals", "Favorability")
+  ) {
+    stop(
+      "Please, select a value for 'method' between 'Hypergeometric',
+         'RawBeals', 'ThresholdBeals' or 'Favorability'"
+    )
+    if (!is.null(weights) & wa == T) {
+      if (!identical(dimnames(x), dimnames(weights))) {
+        stop(
+          "Please make sure that 'x' and 'weights' have same names in rows and columns."
+        )
       }
     }
   }
-  if(method =="ThresholdBeals"){
-    if (!limit %in% c("quantile", "min", "const", "outlier")){
-      stop("Please, select a value for 'limit' between 'quantile', 'min', 'const', and 'outlier'")
+  if (method == "ThresholdBeals") {
+    if (!limit %in% c("quantile", "min", "const", "outlier")) {
+      stop(
+        "Please, select a value for 'limit' between 'quantile', 'min', 'const', and 'outlier'"
+      )
     }
-    if(wa == T){
-      stop("Weighted abundances are not yet implemented for the ThresholdBeals method.")
+    if (wa == T) {
+      stop(
+        "Weighted abundances are not yet implemented for the ThresholdBeals method."
+      )
     }
   }
   x <- xOrig <- as.matrix(x)
-  r <- rOrig <-as.matrix(r)
+  r <- rOrig <- as.matrix(r)
   rIsInd <- FALSE
-  if(!is.null(r)){
-    if (identical(rownames(r), colnames(r)) |
-        identical(gsub("T\\.", x=rownames(r), replacement=""),
-                  gsub("I\\.", x=colnames(r), replacement=""))){
+  if (!is.null(r)) {
+    if (
+      identical(rownames(r), colnames(r)) |
+        identical(
+          gsub("T\\.", x = rownames(r), replacement = ""),
+          gsub("I\\.", x = colnames(r), replacement = "")
+        )
+    ) {
       rIsInd <- TRUE
     }
   }
-  if(!rIsInd){ # IF r is not indication, estimate indication matrix from x
+  if (!rIsInd) {
+    # IF r is not indication, estimate indication matrix from x
     r <- replace(r, r > 0, 1)
     x <- replace(x, x > 0, 1)
     prepData <- dataPrep(x = x, r = r, removeAbsent = removeAbsent)
     coOcc <- coocPrep(prepData$r)
-    if(method == "Hypergeometric"){
-      res <- Hypergeometric(M = coOcc, x = prepData$x, r = prepData$r)
+    if (method == "Hypergeometric") {
+      res <- Hypergeometric(
+        M = coOcc,
+        x = prepData$x,
+        r = prepData$r,
+        niche_weighting = niche_weighting
+      )
     }
-    if(method == "RawBeals" |
-       method == "ThresholdBeals" |
-       method == "Favorability"){
+    if (
+      method == "RawBeals" |
+        method == "ThresholdBeals" |
+        method == "Favorability"
+    ) {
       res <- Beals(M = coOcc, x = prepData$x, r = prepData$r)
-      if(method == "RawBeals"){
+      if (method == "RawBeals") {
         res$t <- NULL
       }
-      if(method == "ThresholdBeals"){
-        res <- BealsThres(Beals = res, limit = limit, const = const,
-                          r = prepData$r, x = prepData$x)
+      if (method == "ThresholdBeals") {
+        res <- BealsThres(
+          Beals = res,
+          limit = limit,
+          const = const,
+          r = prepData$r,
+          x = prepData$x
+        )
       }
-      if(method == "Favorability"){
+      if (method == "Favorability") {
         res <- Favorability(Beals = res, x = prepData$x)
       }
     }
-  }else{ # if r was indicator matrix
+  } else {
+    # if r was indicator matrix
     x <- replace(x, x > 0, 1)
     M <- r
     colnamesM1 <- colnames(M)
-    nsp1 <- sum(colnames(x) %in%colnamesM1)
-    colnamesM2 <- gsub("I\\.", x=colnames(r), replacement="")
-    nsp2 <- sum(colnames(x) %in%colnamesM2)
-    if(nsp1 == 0 & nsp2 == 0){
-      stop("Check the names of the indication matrix you provided (r). At least some of the species in 'x' must be present in 'r'")
+    nsp1 <- sum(colnames(x) %in% colnamesM1)
+    colnamesM2 <- gsub("I\\.", x = colnames(r), replacement = "")
+    nsp2 <- sum(colnames(x) %in% colnamesM2)
+    if (nsp1 == 0 & nsp2 == 0) {
+      stop(
+        "Check the names of the indication matrix you provided (r). At least some of the species in 'x' must be present in 'r'"
+      )
     }
-    if(nsp1 >= nsp2){
+    if (nsp1 >= nsp2) {
       spPres <- which(colnames(x) %in% colnamesM1)
       x <- x[, spPres]
-      if(length(spPres) < ncol(x)){
-        warning("x does not contain exactly the same species as r.
-                \nOnly those species present in r have been kept in x")
+      if (length(spPres) < ncol(x)) {
+        warning(
+          "x does not contain exactly the same species as r.
+                \nOnly those species present in r have been kept in x"
+        )
       }
-    } else{
+    } else {
       spPres <- which(colnames(x) %in% colnamesM2)
       x <- x[, spPres]
-      if(length(spPres) < ncol(x)){
-        warning("x does not contain exactly the same species as r.
-                \nOnly those species present in r have been kept in x")
+      if (length(spPres) < ncol(x)) {
+        warning(
+          "x does not contain exactly the same species as r.
+                \nOnly those species present in r have been kept in x"
+        )
       }
     }
 
-    if(method == "Hypergeometric"){
+    if (method == "Hypergeometric") {
       b <- (x %*% M / rowSums(x))
       dimnames(b) <- dimnames(x)
-      res <- list(indication = M, AllProbs = b, Pool = replace(b, x>0, 1),
-                  Dark = replace(b, x > 0, NA))
+      res <- list(
+        indication = M,
+        AllProbs = b,
+        Pool = replace(b, x > 0, 1),
+        Dark = replace(b, x > 0, NA)
+      )
     }
 
-    if(method == "RawBeals" |
-       method == "ThresholdBeals" |
-       method == "Favorability"){
+    if (
+      method == "RawBeals" |
+        method == "ThresholdBeals" |
+        method == "Favorability"
+    ) {
       S <- rowSums(x)
       b <- x
       for (i in 1:nrow(x)) {
@@ -174,47 +218,67 @@ DarkDiv <- function(x,
       }
       SM <- rep(S, ncol(x))
       SM <- SM - x
-      b <- b/replace(SM, SM == 0, 1)
-      res <- list(indication = M, AllProbs = b, Pool = replace(b, x>0, 1),
-                  Dark = replace(b, x > 0, NA))
+      b <- b / replace(SM, SM == 0, 1)
+      res <- list(
+        indication = M,
+        AllProbs = b,
+        Pool = replace(b, x > 0, 1),
+        Dark = replace(b, x > 0, NA)
+      )
 
-      if(method == "ThresholdBeals"){
-        stop("ThresholdBeals method cannot be estimated without the reference dataset, since it is needed to estimate the limits")
+      if (method == "ThresholdBeals") {
+        stop(
+          "ThresholdBeals method cannot be estimated without the reference dataset, since it is needed to estimate the limits"
+        )
       }
 
-      if(method == "Favorability"){
+      if (method == "Favorability") {
         res <- Favorability(Beals = res, x = x)
       }
     }
   }
 
   ##### APPLYING WEIGHTS
-  if(wa == T){
-    res <- DDWeighting(x = xOrig, ind = res$indication, weights = weights, 
-                       method = method) 
+  if (wa == T) {
+    res <- DDWeighting(
+      x = xOrig,
+      ind = res$indication,
+      weights = weights,
+      method = method
+    )
   }
 
   ### REMOVING SPECIES ABSENT FROM DATASET
-  if(removeAbsent == FALSE){ #Fill absent species with NA
-    indicNew <- matrix(NA, nrow=ncol(prepData$xOrig), ncol=ncol(prepData$xOrig),
-                     dimnames = list(paste("T", colnames(prepData$xOrig),sep = "."),
-                                     paste("I", colnames(prepData$xOrig),sep = ".")))
-    indicNew[rownames(res$indication), colnames(res$indication)] <- res$indication
-    AllProbsNew <- PoolNew <- DarkNew<- matrix(NA, nrow=nrow(prepData$xOrig),
-                                               ncol=ncol(prepData$xOrig),
-                                               dimnames = dimnames(prepData$xOrig))
+  if (removeAbsent == FALSE) {
+    #Fill absent species with NA
+    indicNew <- matrix(
+      NA,
+      nrow = ncol(prepData$xOrig),
+      ncol = ncol(prepData$xOrig),
+      dimnames = list(
+        paste("T", colnames(prepData$xOrig), sep = "."),
+        paste("I", colnames(prepData$xOrig), sep = ".")
+      )
+    )
+    indicNew[
+      rownames(res$indication),
+      colnames(res$indication)
+    ] <- res$indication
+    AllProbsNew <- PoolNew <- DarkNew <- matrix(
+      NA,
+      nrow = nrow(prepData$xOrig),
+      ncol = ncol(prepData$xOrig),
+      dimnames = dimnames(prepData$xOrig)
+    )
     AllProbsNew[rownames(res$AllProbs), colnames(res$AllProbs)] <- res$AllProbs
     PoolNew[rownames(res$Pool), colnames(res$Pool)] <- res$Pool
     DarkNew[rownames(res$Dark), colnames(res$Dark)] <- res$Dark
-    res <- list(indication = indicNew, AllProbs = AllProbsNew, Pool = PoolNew,
-                Dark = DarkNew)
+    res <- list(
+      indication = indicNew,
+      AllProbs = AllProbsNew,
+      Pool = PoolNew,
+      Dark = DarkNew
+    )
   }
   return(res)
 }
-
-
-
-
-
-
-
