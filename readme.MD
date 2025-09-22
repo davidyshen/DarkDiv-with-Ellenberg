@@ -1,6 +1,6 @@
-# DarkDivNiches - Dark Diversity with Niche Distance Weighting
+# DarkDivNiche - Dark Diversity with Niche Distance Weighting
 
-This is a fork of the original [DarkDiv package](10.1111/geb.13203), published by Carbona and Pärtel (2021), that extends the functionality to allow niche weighting of co-occurrence patterns using a distance matrix (e.g. based on Ellenberg indicator values or other ecological traits).
+This is a fork of the original [DarkDiv package](10.1111/geb.13203), published by Carbona and Pärtel (2021), that extends the functionality to allow niche weighting of co-occurrence patterns using a distance matrix (e.g. based on Ellenberg indicator values or other ecological traits). The package is now named DarkDivNiche.
 
 The rationale for adding this is that species that have strong abiotic relationships, e.g. very wet loving species, may be detected in plots with generalist species, i.e. species that occur in a wide range of conditions. However, this co-occurrence means that the strength of the strong abiotic relationship may be diluted by its co-occurrence with a generalist species. By weighting the co-occurrence patterns by niche similarity, we can give more weight to co-occurrences between species with similar niches, and less weight to co-occurrences between species with dissimilar niches.
 
@@ -8,7 +8,7 @@ This hopefully retains the strengths of using co-occurrence patterns to add addi
 
 ## New Feature: Niche Weighting Support
 
-The enhanced DarkDivNiches package supports weighting co-occurrence patterns by niche similarity through a new `niche_weighting` parameter, allowing for more ecologically meaningful dark diversity estimates.
+The enhanced DarkDivNiche package supports weighting co-occurrence patterns by niche similarity through a new `niche_weighting` parameter, allowing for more ecologically meaningful dark diversity estimates.
 
 ### Key Features
 
@@ -57,7 +57,7 @@ summary(result_weighted$Dark)
 
 ### Supported Methods
 
-All original DarkDivNiches methods work with niche weighting:
+All original DarkDivNiche methods work with niche weighting:
 
 ```r
 # Hypergeometric (default)
@@ -97,7 +97,7 @@ The implementation includes comprehensive validation:
 - **Ecologically meaningful**: Co-occurrences between similar species weighted more heavily
 - **Flexible**: Accepts any square distance/similarity matrix with proper species names
 - **Robust**: Comprehensive validation and error handling
-- **Consistent**: Same approach works across all DarkDivNiches methods
+- **Consistent**: Same approach works across all DarkDivNiche methods
 - **Tested**: Extensive test suite ensures reliability and backward compatibility
 
 ## Testing and Validation
@@ -105,9 +105,9 @@ The implementation includes comprehensive validation:
 The implementation has been thoroughly tested with:
 
 - ✅ Multiple test cases using real Ellenberg ecological data
-- ✅ Compatibility with all DarkDivNiches methods
+- ✅ Compatibility with all DarkDivNiche methods
 - ✅ Proper input validation and error handling  
-- ✅ Preservation of all basic DarkDivNiches properties
+- ✅ Preservation of all basic DarkDivNiche properties
 - ✅ Backward compatibility (all existing functionality unchanged)
 
 ## References
